@@ -1,0 +1,29 @@
+docker manifest create registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-arm64 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-arm registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-amd64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-arm --os linux --arch arm
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-agent:v0.4.0
+
+docker manifest create registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-arm64 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-arm registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-amd64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-arm --os linux --arch arm
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-tunnel-server:v0.4.0
+
+docker manifest create registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-arm64 registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-arm registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-amd64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-arm --os linux --arch arm
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push registry.cn-hangzhou.aliyuncs.com/openyurt/yurtctl-servant:v0.4.0
+
+docker manifest create registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-arm64 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-arm registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-amd64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-arm --os linux --arch arm
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push registry.cn-hangzhou.aliyuncs.com/openyurt/yurt-controller-manager:v0.4.0
+
+docker manifest create registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-arm64 registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-arm registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-amd64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-arm --os linux --arch arm
+docker manifest annotate registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0 registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push registry.cn-hangzhou.aliyuncs.com/openyurt/yurthub:v0.4.0

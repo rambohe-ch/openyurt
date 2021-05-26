@@ -1,0 +1,29 @@
+docker manifest create openyurt/yurt-tunnel-agent:v0.4.0 openyurt/yurt-tunnel-agent:v0.4.0-arm64 openyurt/yurt-tunnel-agent:v0.4.0-arm openyurt/yurt-tunnel-agent:v0.4.0-amd64
+docker manifest annotate openyurt/yurt-tunnel-agent:v0.4.0 openyurt/yurt-tunnel-agent:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate openyurt/yurt-tunnel-agent:v0.4.0 openyurt/yurt-tunnel-agent:v0.4.0-arm --os linux --arch arm
+docker manifest annotate openyurt/yurt-tunnel-agent:v0.4.0 openyurt/yurt-tunnel-agent:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push openyurt/yurt-tunnel-agent:v0.4.0
+
+docker manifest create openyurt/yurt-tunnel-server:v0.4.0 openyurt/yurt-tunnel-server:v0.4.0-arm64 openyurt/yurt-tunnel-server:v0.4.0-arm openyurt/yurt-tunnel-server:v0.4.0-amd64
+docker manifest annotate openyurt/yurt-tunnel-server:v0.4.0 openyurt/yurt-tunnel-server:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate openyurt/yurt-tunnel-server:v0.4.0 openyurt/yurt-tunnel-server:v0.4.0-arm --os linux --arch arm
+docker manifest annotate openyurt/yurt-tunnel-server:v0.4.0 openyurt/yurt-tunnel-server:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push openyurt/yurt-tunnel-server:v0.4.0
+
+docker manifest create openyurt/yurtctl-servant:v0.4.0 openyurt/yurtctl-servant:v0.4.0-arm64 openyurt/yurtctl-servant:v0.4.0-arm openyurt/yurtctl-servant:v0.4.0-amd64
+docker manifest annotate openyurt/yurtctl-servant:v0.4.0 openyurt/yurtctl-servant:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate openyurt/yurtctl-servant:v0.4.0 openyurt/yurtctl-servant:v0.4.0-arm --os linux --arch arm
+docker manifest annotate openyurt/yurtctl-servant:v0.4.0 openyurt/yurtctl-servant:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push openyurt/yurtctl-servant:v0.4.0
+
+docker manifest create openyurt/yurt-controller-manager:v0.4.0 openyurt/yurt-controller-manager:v0.4.0-arm64 openyurt/yurt-controller-manager:v0.4.0-arm openyurt/yurt-controller-manager:v0.4.0-amd64
+docker manifest annotate openyurt/yurt-controller-manager:v0.4.0 openyurt/yurt-controller-manager:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate openyurt/yurt-controller-manager:v0.4.0 openyurt/yurt-controller-manager:v0.4.0-arm --os linux --arch arm
+docker manifest annotate openyurt/yurt-controller-manager:v0.4.0 openyurt/yurt-controller-manager:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push openyurt/yurt-controller-manager:v0.4.0
+
+docker manifest create openyurt/yurthub:v0.4.0 openyurt/yurthub:v0.4.0-arm64 openyurt/yurthub:v0.4.0-arm openyurt/yurthub:v0.4.0-amd64
+docker manifest annotate openyurt/yurthub:v0.4.0 openyurt/yurthub:v0.4.0-arm64 --os linux --arch arm64
+docker manifest annotate openyurt/yurthub:v0.4.0 openyurt/yurthub:v0.4.0-arm --os linux --arch arm
+docker manifest annotate openyurt/yurthub:v0.4.0 openyurt/yurthub:v0.4.0-amd64 --os linux --arch amd64
+docker manifest push openyurt/yurthub:v0.4.0
