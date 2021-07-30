@@ -39,11 +39,6 @@ func newFakeIptablesManager(client clientset.Interface,
 		syncPeriod = defaultSyncPeriod
 	}
 
-	_, insecurePort, err := net.SplitHostPort(listenInsecureAddr)
-	if err != nil {
-		return nil
-	}
-
 	im := &iptablesManager{
 		kubeClient:       client,
 		iptables:         iptInterface,
@@ -51,7 +46,6 @@ func newFakeIptablesManager(client clientset.Interface,
 		nodeInformer:     nodeInformer,
 		secureDnatDest:   listenAddr,
 		insecureDnatDest: listenInsecureAddr,
-		insecurePort:     insecurePort,
 		lastNodesIP:      make([]string, 0),
 		lastDnatPorts:    make([]string, 0),
 		syncPeriod:       syncPeriod,
