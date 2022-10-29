@@ -181,7 +181,7 @@ var _ = ginkgo.Describe("edge-autonomy"+YurtE2ENamespaceName, ginkgo.Ordered, gi
 
 	var _ = ginkgo.Describe("coredns"+YurtE2ENamespaceName, func() {
 		ginkgo.It("coredns edge-autonomy test", ginkgo.Label("edge-autonomy"), func() {
-			ginkgo.Skip("current coredns does not support edge-autonomy, coredns-edge-autonomy tests will be skipped.")
+			//ginkgo.Skip("current coredns does not support edge-autonomy, coredns-edge-autonomy tests will be skipped.")
 			// obtain coredns containerID with crictl
 			cmd := ` /bin/bash -c "crictl ps | grep coredns | awk '{print \$1}'"`
 			opBytes, err := exec.Command("/bin/bash", "-c", "docker exec -t "+coreDnsNodeName+cmd).CombinedOutput()
