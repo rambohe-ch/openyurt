@@ -24,18 +24,19 @@ jobs:
             });
 
             if (regex.test(comment.data.body)) {
-              try {
-                await github.rest.repos.checkUserAccessLevel({
+                const collaborator = await github.rest.repos.getCollaboratorPermissionLevel({
                   owner: issue.owner,
                   repo: issue.repo,
                   username: username,
-                  permission: 'read'
                 });
-                return true;
-              } catch (error) {
-                console.log(`User ${username} does not have access to rerun failed workflows`);
-                return false;
-              }
+
+                if (collaborator.permission != 'write' && collaborator.permission != 'admin')} {
+                  console.log(`User ${username} with permission ${collaborator.permission} does not have access to rerun failed workflows`);
+                  return false;
+                } else {
+                  console.log(`User ${username} with permission ${collaborator.permission} has access to rerun failed workflows`);
+                  return true;
+                }
             } else {
               return false;
             }
