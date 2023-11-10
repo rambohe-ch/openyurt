@@ -65,5 +65,5 @@ jobs:
                 repo: issue.repo,
                 run_id: run.id,
               });
-              console.log('reRunWorkflow workflow ${JSON.stringify(run)} with response ${JSON.stringify(result)}');
+              console.log(`reRunWorkflow workflow ${JSON.stringify(run)} with response ${JSON.stringify(result)}`);
             }
