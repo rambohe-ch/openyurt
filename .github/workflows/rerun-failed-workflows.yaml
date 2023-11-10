@@ -30,7 +30,7 @@ jobs:
                   username: username,
                 });
 
-                if (collaborator.permission != 'write' && collaborator.permission != 'admin')} {
+                if (collaborator.permission != 'write' && collaborator.permission != 'admin') {
                   console.log(`User ${username} with permission ${collaborator.permission} does not have access to rerun failed workflows`);
                   return false;
                 } else {
