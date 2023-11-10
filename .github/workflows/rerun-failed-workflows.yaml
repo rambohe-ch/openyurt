@@ -60,10 +60,10 @@ jobs:
               status: 'failure',
             });
             for (const run of workflows.data.workflow_runs) {
-              const result = await github.rest.actions.reRunWorkflow({
+              const result = await github.rest.actions.reRunWorkflowFailedJobs({
                 owner: issue.owner,
                 repo: issue.repo,
                 run_id: run.id,
               });
-              console.log(`reRunWorkflow workflow ${JSON.stringify(run)} with response ${JSON.stringify(result)}`);
+              console.log(`reRunWorkflowFailedJobs workflow ${JSON.stringify(run)} with response ${JSON.stringify(result)}`);
             }
