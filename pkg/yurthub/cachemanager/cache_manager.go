@@ -164,6 +164,7 @@ func (cm *cacheManager) queryListObject(req *http.Request) (runtime.Object, erro
 	ctx := req.Context()
 	info, _ := apirequest.RequestInfoFrom(ctx)
 	comp, _ := util.ClientComponentFrom(ctx)
+	isPartialReq, _ := util.IsPartialRequestFrom(ctx)
 	key, err := cm.storage.KeyFunc(storage.KeyBuildInfo{
 		Component: comp,
 		Namespace: info.Namespace,
@@ -176,16 +177,31 @@ func (cm *cacheManager) queryListObject(req *http.Request) (runtime.Object, erro
 		return nil, err
 	}
 
-	listGvk, err := cm.prepareGvkForListObj(schema.GroupVersionResource{
-		Group:    info.APIGroup,
-		Version:  info.APIVersion,
-		Resource: info.Resource,
-	})
-	if err != nil {
-		klog.Errorf("could not get gvk for ListObject for req: %s, %v", util.ReqString(req), err)
-		// If err is hubmeta.ErrGVRNotRecognized, the reverse proxy will set the HTTP Status Code as 404.
-		return nil, err
+	var listGvk schema.GroupVersionKind
+	if isPartialReq {
+		convertGvk, _ := util.ConvertGVKFrom(ctx)
+		if convertGvk == nil {
+			klog.Errorf("Error to get convert gvk for partial object metadata request")
+			return nil, fmt.Errorf("error to get convert gvk for partial object metadata request")
+		}
+		listGvk = schema.GroupVersionKind{
+			Group:   convertGvk.Group,
+			Version: convertGvk.Version,
+			Kind:    convertGvk.Kind,
+		}
+	} else {
+		listGvk, err = cm.prepareGvkForListObj(schema.GroupVersionResource{
+			Group:    info.APIGroup,
+			Version:  info.APIVersion,
+			Resource: info.Resource,
+		})
+		if err != nil {
+			klog.Errorf("could not get gvk for ListObject for req: %s, %v", util.ReqString(req), err)
+			// If err is hubmeta.ErrGVRNotRecognized, the reverse proxy will set the HTTP Status Code as 404.
+			return nil, err
+		}
 	}
+
 	listObj, err := generateEmptyListObjOfGVK(listGvk)
 	if err != nil {
 		klog.Errorf("could not create ListObj for gvk %s for req: %s, %v", listGvk.String(), util.ReqString(req), err)
@@ -439,7 +455,20 @@ func (cm *cacheManager) saveWatchObject(ctx context.Context, info *apirequest.Re
 func (cm *cacheManager) saveListObject(ctx context.Context, info *apirequest.RequestInfo, b []byte) error {
 	comp, _ := util.ClientComponentFrom(ctx)
 	respContentType, _ := util.RespContentTypeFrom(ctx)
-	s := cm.serializerManager.CreateSerializer(respContentType, info.APIGroup, info.APIVersion, info.Resource)
+	gvr := schema.GroupVersionResource{
+		Group:    info.APIGroup,
+		Version:  info.APIVersion,
+		Resource: info.Resource,
+	}
+	isPartialReq, _ := util.IsPartialRequestFrom(ctx)
+	if isPartialReq {
+		convertGvk, _ := util.ConvertGVKFrom(ctx)
+		if convertGvk != nil {
+			gvr, _ = meta.UnsafeGuessKindToResource(*convertGvk)
+		}
+	}
+
+	s := cm.serializerManager.CreateSerializer(respContentType, gvr.Group, gvr.Version, gvr.Resource)
 	if s == nil {
 		klog.Errorf("could not create serializer in saveListObject, %s", util.ReqInfoString(info))
 		return fmt.Errorf("could not create serializer in saveListObject, %s", util.ReqInfoString(info))
@@ -464,22 +493,20 @@ func (cm *cacheManager) saveListObject(ctx context.Context, info *apirequest.Req
 	}
 	klog.V(5).Infof("list items for %s is: %d", util.ReqInfoString(info), len(items))
 
-	kind := strings.TrimSuffix(list.GetObjectKind().GroupVersionKind().Kind, "List")
-	apiVersion := schema.GroupVersion{
-		Group:   info.APIGroup,
-		Version: info.APIVersion,
-	}.String()
+	gvk := list.GetObjectKind().GroupVersionKind()
+	kind := strings.TrimSuffix(gvk.Kind, "List")
+	groupVersion := gvk.GroupVersion().String()
 	accessor := meta.NewAccessor()
 
 	// Verify if DynamicRESTMapper(which store the CRD info) needs to be updated
-	if err := cm.restMapperManager.UpdateKind(schema.GroupVersionKind{Group: info.APIGroup, Version: info.APIVersion, Kind: kind}); err != nil {
+	if err := cm.restMapperManager.UpdateKind(schema.GroupVersionKind{Group: gvk.Group, Version: gvk.Version, Kind: kind}); err != nil {
 		klog.Errorf("could not update the DynamicRESTMapper %v", err)
 	}
 
 	if info.Name != "" && len(items) == 1 {
 		// list with fieldSelector=metadata.name=xxx
 		accessor.SetKind(items[0], kind)
-		accessor.SetAPIVersion(items[0], apiVersion)
+		accessor.SetAPIVersion(items[0], groupVersion)
 		name, _ := accessor.Name(items[0])
 		ns, _ := accessor.Namespace(items[0])
 		if ns == "" {
@@ -500,7 +527,7 @@ func (cm *cacheManager) saveListObject(ctx context.Context, info *apirequest.Req
 		comp, _ := util.ClientComponentFrom(ctx)
 		for i := range items {
 			accessor.SetKind(items[i], kind)
-			accessor.SetAPIVersion(items[i], apiVersion)
+			accessor.SetAPIVersion(items[i], groupVersion)
 			name, _ := accessor.Name(items[i])
 			ns, _ := accessor.Namespace(items[i])
 			if ns == "" {
@@ -528,8 +555,20 @@ func (cm *cacheManager) saveListObject(ctx context.Context, info *apirequest.Req
 func (cm *cacheManager) saveOneObject(ctx context.Context, info *apirequest.RequestInfo, b []byte) error {
 	comp, _ := util.ClientComponentFrom(ctx)
 	respContentType, _ := util.RespContentTypeFrom(ctx)
+	gvr := schema.GroupVersionResource{
+		Group:    info.APIGroup,
+		Version:  info.APIVersion,
+		Resource: info.Resource,
+	}
+	isPartialReq, _ := util.IsPartialRequestFrom(ctx)
+	if isPartialReq {
+		convertGvk, _ := util.ConvertGVKFrom(ctx)
+		if convertGvk != nil {
+			gvr, _ = meta.UnsafeGuessKindToResource(*convertGvk)
+		}
+	}
 
-	s := cm.serializerManager.CreateSerializer(respContentType, info.APIGroup, info.APIVersion, info.Resource)
+	s := cm.serializerManager.CreateSerializer(respContentType, gvr.Group, gvr.Version, gvr.Resource)
 	if s == nil {
 		klog.Errorf("could not create serializer in saveOneObject, %s", util.ReqInfoString(info))
 		return fmt.Errorf("could not create serializer in saveOneObject, %s", util.ReqInfoString(info))
