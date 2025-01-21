@@ -53,6 +53,14 @@ spec:
             initialDelaySeconds: 300
             periodSeconds: 5
             failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              host: {{ .Values.yurthubBindingAddr }}
+              path: /v1/readyz
+              port: 10267
+            initialDelaySeconds: 300
+            periodSeconds: 5
+            failureThreshold: 3
           resources:
             requests:
               cpu: 150m

@@ -30,7 +30,6 @@ import (
 
 	"github.com/openyurtio/openyurt/cmd/yurthub/app/config"
 	"github.com/openyurtio/openyurt/pkg/util/profile"
-	"github.com/openyurtio/openyurt/pkg/yurthub/certificate"
 	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/rest"
 	ota "github.com/openyurtio/openyurt/pkg/yurthub/otaupdate"
 	otautil "github.com/openyurtio/openyurt/pkg/yurthub/otaupdate/util"
@@ -90,7 +89,7 @@ func registerHandlers(c *mux.Router, cfg *config.YurtHubConfiguration, rest *res
 
 	// register handler for health check
 	c.HandleFunc("/v1/healthz", healthz).Methods("GET")
-	c.Handle("/v1/readyz", readyz(cfg.CertManager)).Methods("GET")
+	c.Handle("/v1/readyz", readyz(cfg)).Methods("GET")
 
 	// register handler for profile
 	if cfg.EnableProfiling {
@@ -116,16 +115,25 @@ func healthz(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, "OK")
 }
 
-// readyz is used for checking certificates are ready or not
-func readyz(certificateMgr certificate.YurtCertificateManager) http.Handler {
+// readyz is used for checking yurthub is ready to proxy requests or not
+func readyz(cfg *config.YurtHubConfiguration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ready := certificateMgr.Ready()
-		if ready {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "OK")
-		} else {
+		if ready := cfg.CertManager.Ready(); !ready {
 			http.Error(w, "certificates are not ready", http.StatusInternalServerError)
+			return
 		}
+
+		if ready := cfg.ConfigManager.HasSynced(); !ready {
+			http.Error(w, "yurt-hub-cfg configmap is not synced", http.StatusInternalServerError)
+			return
+		}
+
+		if synced := cfg.FilterFinder.HasSynced(); !synced {
+			http.Error(w, "resources needed by filters are not synced", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK")
 	})
 }
 

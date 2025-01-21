@@ -95,9 +95,8 @@ func NewConfigurationManager(nodeName string, sharedFactory informers.SharedInfo
 	return m
 }
 
-// IsReady is used for checking that configuration of Yurthub has been loaded completed or not.
-// Yurthub should reject all requests from components on the node before it is ready.
-func (m *Manager) IsReady() bool {
+// HasSynced is used for checking that configuration of Yurthub has been loaded completed or not.
+func (m *Manager) HasSynced() bool {
 	return m.configMapSynced()
 }
 
@@ -105,7 +104,6 @@ func (m *Manager) IsReady() bool {
 func (m *Manager) ListAllCacheAgents() []string {
 	m.RLock()
 	defer m.RUnlock()
-
 	return m.allCacheAgents.UnsortedList()
 }
 

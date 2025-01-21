@@ -301,7 +301,7 @@ func registerInformers(options *options.YurtHubOptions,
 	workingMode util.WorkingMode,
 	tenantNs string) {
 
-	// configmap informer is used by Yurthub filter approver
+	// configmap informer is used by Yurthub filter approver/cache manager
 	newConfigmapInformer := func(client kubernetes.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 		tweakListOptions := func(options *metav1.ListOptions) {
 			options.FieldSelector = fields.Set{"metadata.name": util.YurthubConfigMapName}.String()

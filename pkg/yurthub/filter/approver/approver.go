@@ -59,7 +59,7 @@ func (a *approver) Approve(req *http.Request) (bool, []string) {
 		}
 	}
 
-	if ok := cache.WaitForCacheSync(a.stopCh, a.manager.IsReady); !ok {
+	if ok := cache.WaitForCacheSync(a.stopCh, a.manager.HasSynced); !ok {
 		return false, []string{}
 	}
 
