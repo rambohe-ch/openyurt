@@ -37,7 +37,7 @@ import (
 
 	"github.com/openyurtio/openyurt/pkg/yurthub/cachemanager"
 	"github.com/openyurtio/openyurt/pkg/yurthub/healthchecker"
-	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/rest"
+	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/directclient"
 	"github.com/openyurtio/openyurt/pkg/yurthub/storage"
 	"github.com/openyurtio/openyurt/pkg/yurthub/storage/disk"
 )
@@ -59,7 +59,7 @@ func TestLocalCacheHandler(t *testing.T) {
 	//u, _ := url.Parse("https://10.10.10.113:6443")
 	fakeHealthChecker := healthchecker.NewFakeChecker(false, nil)
 
-	rcm, err := rest.NewRestConfigManager(nil, fakeHealthChecker)
+	rcm, err := directclient.NewRestClientManager(nil, nil, fakeHealthChecker)
 	if err != nil {
 		t.Fatal(err)
 	}

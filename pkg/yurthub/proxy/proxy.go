@@ -31,7 +31,7 @@ import (
 	"github.com/openyurtio/openyurt/cmd/yurthub/app/config"
 	"github.com/openyurtio/openyurt/pkg/yurthub/cachemanager"
 	"github.com/openyurtio/openyurt/pkg/yurthub/healthchecker"
-	hubrest "github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/rest"
+	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/directclient"
 	"github.com/openyurtio/openyurt/pkg/yurthub/proxy/autonomy"
 	"github.com/openyurtio/openyurt/pkg/yurthub/proxy/local"
 	"github.com/openyurtio/openyurt/pkg/yurthub/proxy/multiplexer"
@@ -63,7 +63,7 @@ type yurtReverseProxy struct {
 func NewYurtReverseProxyHandler(
 	yurtHubCfg *config.YurtHubConfiguration,
 	localCacheMgr cachemanager.CacheManager,
-	restConfigMgr *hubrest.RestConfigManager,
+	manager *directclient.DirectClientManager,
 	transportMgr transport.Interface,
 	cloudHealthChecker healthchecker.MultipleBackendsHealthChecker,
 	tenantMgr tenant.Interface,
@@ -98,7 +98,7 @@ func NewYurtReverseProxyHandler(
 		localProxy = local.WithFakeTokenInject(localProxy, yurtHubCfg.SerializerManager)
 
 		autonomyProxy = autonomy.NewAutonomyProxy(
-			restConfigMgr,
+			manager,
 			localCacheMgr,
 		)
 	}

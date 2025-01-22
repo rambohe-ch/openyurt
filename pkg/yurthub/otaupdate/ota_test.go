@@ -29,7 +29,7 @@ import (
 
 	"github.com/openyurtio/openyurt/pkg/yurthub/cachemanager"
 	"github.com/openyurtio/openyurt/pkg/yurthub/healthchecker"
-	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/rest"
+	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/directclient"
 	"github.com/openyurtio/openyurt/pkg/yurthub/otaupdate/util"
 	"github.com/openyurtio/openyurt/pkg/yurthub/storage"
 	"github.com/openyurtio/openyurt/pkg/yurthub/storage/disk"
@@ -100,7 +100,7 @@ func TestUpdatePod(t *testing.T) {
 func TestHealthyCheck(t *testing.T) {
 	fakeHealthchecker := healthchecker.NewFakeChecker(false, nil)
 
-	rcm, err := rest.NewRestConfigManager(nil, fakeHealthchecker)
+	rcm, err := directclient.NewRestClientManager(nil, nil, fakeHealthchecker)
 	if err != nil {
 		t.Fatal(err)
 	}
