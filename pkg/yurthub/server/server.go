@@ -103,7 +103,7 @@ func registerHandlers(c *mux.Router, cfg *config.YurtHubConfiguration, rest *res
 	if cfg.WorkingMode == util.WorkingModeEdge {
 		c.Handle("/pods", ota.GetPods(cfg.StorageWrapper)).Methods("GET")
 	} else {
-		c.Handle("/pods", getPodList(cfg.SharedFactory, cfg.NodeName)).Methods("GET")
+		c.Handle("/pods", getPodList(cfg.SharedFactory)).Methods("GET")
 	}
 	c.Handle("/openyurt.io/v1/namespaces/{ns}/pods/{podname}/upgrade",
 		ota.HealthyCheck(rest, cfg.NodeName, ota.UpdatePod)).Methods("POST")
@@ -137,8 +137,7 @@ func readyz(cfg *config.YurtHubConfiguration) http.Handler {
 	})
 }
 
-func getPodList(sharedFactory informers.SharedInformerFactory, nodeName string) http.Handler {
-
+func getPodList(sharedFactory informers.SharedInformerFactory) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		podLister := sharedFactory.Core().V1().Pods().Lister()
 		podList, err := podLister.List(labels.Everything())

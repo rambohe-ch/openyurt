@@ -89,7 +89,43 @@ func NewCmdStartYurtHub(ctx context.Context) *cobra.Command {
 
 // Run runs the YurtHubConfiguration. This should never exit
 func Run(ctx context.Context, cfg *config.YurtHubConfiguration) error {
-	if cfg.WorkingMode != util.WorkingModeLocal {
+	switch cfg.WorkingMode {
+	case util.WorkingModeLocal:
+		klog.Infof("new locallb manager for node %s ", cfg.NodeName)
+		locallbMgr, err := locallb.NewLocalLBManager(cfg.TenantKasService, cfg.SharedFactory)
+		// when local mode yurthub exits, we need to clean configured iptables
+		defer locallbMgr.CleanIptables()
+		if err != nil {
+			return fmt.Errorf("could not new locallb manager, %w", err)
+		}
+		// Start the informer factory if all informers have been registered
+		cfg.SharedFactory.Start(ctx.Done())
+
+	case util.WorkingModeCloud:
+		defer cfg.CertManager.Stop()
+		trace := 1
+		klog.Infof("%d. new transport manager", trace)
+		transportManager, err := transport.NewTransportManager(cfg.CertManager, ctx.Done())
+		if err != nil {
+			return fmt.Errorf("could not new transport manager, %w", err)
+		}
+		trace++
+
+		klog.Infof("%d. disable health checker for node %s because it is a cloud node", trace, cfg.NodeName)
+		// In cloud mode, cloud health checker is not needed.
+		// This fake checker will always report that the cloud is healthy is unhealthy.
+		cloudHealthChecker := healthchecker.NewFakeChecker(true, make(map[string]int))
+		trace++
+
+		klog.Infof("%d. new tenant sa manager", trace)
+		tenantMgr := tenant.New(cfg.TenantNs, cfg.SharedFactory, ctx.Done())
+		trace++
+
+		// Start the informer factory if all informers have been registered
+		cfg.SharedFactory.Start(ctx.Done())
+		cfg.NodePoolInformerFactory.Start(ctx.Done())
+
+	default:
 		defer cfg.CertManager.Stop()
 		trace := 1
 		klog.Infof("%d. new transport manager", trace)
@@ -106,20 +142,95 @@ func Run(ctx context.Context, cfg *config.YurtHubConfiguration) error {
 		}
 		trace++
 
-		var cloudHealthChecker healthchecker.MultipleBackendsHealthChecker
-		if cfg.WorkingMode == util.WorkingModeEdge {
-			klog.Infof("%d. create health checkers for remote servers", trace)
-			cloudHealthChecker, err = healthchecker.NewCloudAPIServerHealthChecker(cfg, cloudClients, ctx.Done())
-			if err != nil {
-				return fmt.Errorf("could not new cloud health checker, %w", err)
-			}
-		} else {
-			klog.Infof("%d. disable health checker for node %s because it is a cloud node", trace, cfg.NodeName)
-			// In cloud mode, cloud health checker is not needed.
-			// This fake checker will always report that the cloud is healthy is unhealthy.
-			cloudHealthChecker = healthchecker.NewFakeChecker(true, make(map[string]int))
+		klog.Infof("%d. create health checkers for remote servers", trace)
+		cloudHealthChecker, err := healthchecker.NewCloudAPIServerHealthChecker(cfg, cloudClients, ctx.Done())
+		if err != nil {
+			return fmt.Errorf("could not new cloud health checker, %w", err)
 		}
 		trace++
+
+		klog.Infof("%d. new restConfig manager", trace)
+		restConfigMgr, err := hubrest.NewRestConfigManager(cfg.CertManager, cloudHealthChecker)
+		if err != nil {
+			return fmt.Errorf("could not new restConfig manager, %w", err)
+		}
+		trace++
+
+		klog.Infof("%d. new cache manager with storage wrapper and serializer manager", trace)
+		cacheMgr := cachemanager.NewCacheManager(cfg.StorageWrapper, cfg.SerializerManager, cfg.RESTMapperManager, cfg.ConfigManager)
+		trace++
+
+		klog.Infof("%d. new gc manager for node %s, and gc frequency is a random time between %d min and %d min", trace, cfg.NodeName, cfg.GCFrequency, 3*cfg.GCFrequency)
+		gcMgr, err := gc.NewGCManager(cfg, restConfigMgr, ctx.Done())
+		if err != nil {
+			return fmt.Errorf("could not new gc manager, %w", err)
+		}
+		gcMgr.Run()
+		trace++
+
+		klog.Infof("%d. new tenant sa manager", trace)
+		tenantMgr := tenant.New(cfg.TenantNs, cfg.SharedFactory, ctx.Done())
+		trace++
+
+		// Start the informer factory if all informers have been registered
+		cfg.SharedFactory.Start(ctx.Done())
+		cfg.NodePoolInformerFactory.Start(ctx.Done())
+
+		klog.Infof("%d. new reverse proxy handler for remote servers", trace)
+		yurtProxyHandler, err := proxy.NewYurtReverseProxyHandler(
+			cfg,
+			cacheMgr,
+			restConfigMgr,
+			transportManager,
+			cloudHealthChecker,
+			tenantMgr,
+			ctx.Done())
+		if err != nil {
+			return fmt.Errorf("could not create reverse proxy handler, %w", err)
+		}
+		trace++
+
+		if cfg.NetworkMgr != nil {
+			cfg.NetworkMgr.Run(ctx.Done())
+		}
+
+		klog.Infof("%d. new %s server and begin to serve", trace, projectinfo.GetHubName())
+		if err := server.RunYurtHubServers(cfg, yurtProxyHandler, restConfigMgr, ctx.Done()); err != nil {
+			return fmt.Errorf("could not run hub servers, %w", err)
+		}
+	}
+
+	if cfg.WorkingMode != util.WorkingModeLocal {
+		// defer cfg.CertManager.Stop()
+		// trace := 1
+		// klog.Infof("%d. new transport manager", trace)
+		// transportManager, err := transport.NewTransportManager(cfg.CertManager, ctx.Done())
+		// if err != nil {
+		// 	return fmt.Errorf("could not new transport manager, %w", err)
+		// }
+		// trace++
+
+		// klog.Infof("%d. prepare cloud kube clients", trace)
+		// cloudClients, err := createClients(cfg.HeartbeatTimeoutSeconds, cfg.RemoteServers, transportManager)
+		// if err != nil {
+		// 	return fmt.Errorf("could not create cloud clients, %w", err)
+		// }
+		// trace++
+
+		// var cloudHealthChecker healthchecker.MultipleBackendsHealthChecker
+		// if cfg.WorkingMode == util.WorkingModeEdge {
+		// 	klog.Infof("%d. create health checkers for remote servers", trace)
+		// 	cloudHealthChecker, err = healthchecker.NewCloudAPIServerHealthChecker(cfg, cloudClients, ctx.Done())
+		// 	if err != nil {
+		// 		return fmt.Errorf("could not new cloud health checker, %w", err)
+		// 	}
+		// } else {
+		// 	klog.Infof("%d. disable health checker for node %s because it is a cloud node", trace, cfg.NodeName)
+		// 	// In cloud mode, cloud health checker is not needed.
+		// 	// This fake checker will always report that the cloud is healthy is unhealthy.
+		// 	cloudHealthChecker = healthchecker.NewFakeChecker(true, make(map[string]int))
+		// }
+		// trace++
 
 		klog.Infof("%d. new restConfig manager", trace)
 		restConfigMgr, err := hubrest.NewRestConfigManager(cfg.CertManager, cloudHealthChecker)
