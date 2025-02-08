@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kstorage "k8s.io/apiserver/pkg/storage"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/meta"
 	"github.com/openyurtio/openyurt/pkg/yurthub/multiplexer/storage"
@@ -69,7 +71,10 @@ func TestShareCacheManager_ResourceCache(t *testing.T) {
 		{Group: "discovery.k8s.io", Version: "v1", Resource: "endpointslices"},
 	}
 
-	scm := NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources)
+	clientset := fake.NewSimpleClientset()
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+
+	scm := NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources, factory, "", "")
 	cache, _, _ := scm.ResourceCache(serviceGVR)
 	wait.PollUntilContextCancel(context.Background(), 100*time.Millisecond, true, func(context.Context) (done bool, err error) {
 		if cache.ReadinessCheck() == nil {

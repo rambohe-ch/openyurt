@@ -36,6 +36,8 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 
@@ -111,6 +113,9 @@ func TestShareProxy_ServeHTTP_LIST(t *testing.T) {
 	}
 	restMapperManager, _ := meta.NewRESTMapperManager(tmpDir)
 
+	clientset := fake.NewSimpleClientset()
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+
 	poolScopeResources := []schema.GroupVersionResource{
 		{Group: "", Version: "v1", Resource: "services"},
 		{Group: "discovery.k8s.io", Version: "v1", Resource: "endpointslices"},
@@ -151,7 +156,7 @@ func TestShareProxy_ServeHTTP_LIST(t *testing.T) {
 			}
 
 			dsm := multiplexerstorage.NewDummyStorageManager(mockCacheMap())
-			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources)
+			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources, factory, "", "")
 
 			informerSynced := func() bool {
 				return rmm.Ready(&schema.GroupVersionResource{
@@ -293,6 +298,9 @@ func TestShareProxy_ServeHTTP_WATCH(t *testing.T) {
 		{Group: "discovery.k8s.io", Version: "v1", Resource: "endpointslices"},
 	}
 
+	clientset := fake.NewSimpleClientset()
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+
 	for k, tc := range map[string]struct {
 		filterFinder       filter.FilterFinder
 		url                string
@@ -316,7 +324,7 @@ func TestShareProxy_ServeHTTP_WATCH(t *testing.T) {
 	} {
 		t.Run(k, func(t *testing.T) {
 			dsm := multiplexerstorage.NewDummyStorageManager(mockCacheMap())
-			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources)
+			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources, factory, "", "")
 
 			informerSynced := func() bool {
 				return rmm.Ready(&schema.GroupVersionResource{

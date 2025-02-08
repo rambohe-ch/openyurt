@@ -33,6 +33,8 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	kstorage "k8s.io/apiserver/pkg/storage"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/openyurtio/openyurt/pkg/yurthub/kubernetes/meta"
 	"github.com/openyurtio/openyurt/pkg/yurthub/multiplexer"
@@ -78,6 +80,9 @@ func TestWithIsRequestForPoolScopeMetadata(t *testing.T) {
 
 	resolver := newTestRequestInfoResolver()
 
+	clientset := fake.NewSimpleClientset()
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+
 	for k, tc := range testcases {
 		t.Run(k, func(t *testing.T) {
 			req, _ := http.NewRequest(tc.verb, tc.path, nil)
@@ -102,7 +107,7 @@ func TestWithIsRequestForPoolScopeMetadata(t *testing.T) {
 				{Group: "discovery.k8s.io", Version: "v1", Resource: "endpointslices"},
 			}
 
-			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources)
+			rmm := multiplexer.NewRequestMultiplexerManager(dsm, restMapperManager, poolScopeResources, factory, "", "")
 
 			var isRequestForPoolScopeMetadata bool
 			var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

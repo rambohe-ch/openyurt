@@ -86,7 +86,7 @@ func NewConfigurationManager(nodeName string, sharedFactory informers.SharedInfo
 	// init filter settings
 	m.updateFilterSettings(map[string]string{}, "init")
 
-	// prepare configmap event handler
+	// prepare yurt-hub-cfg configmap event handler
 	configmapInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    m.addConfigmap,
 		UpdateFunc: m.updateConfigmap,
@@ -140,7 +140,7 @@ func (m *Manager) FindFiltersFor(req *http.Request) []string {
 
 func (m *Manager) addConfigmap(obj interface{}) {
 	cfg, ok := obj.(*corev1.ConfigMap)
-	if !ok {
+	if !ok || cfg.Name != util.YurthubConfigMapName {
 		return
 	}
 
@@ -150,12 +150,12 @@ func (m *Manager) addConfigmap(obj interface{}) {
 
 func (m *Manager) updateConfigmap(oldObj, newObj interface{}) {
 	oldCfg, ok := oldObj.(*corev1.ConfigMap)
-	if !ok {
+	if !ok || oldCfg.Name != util.YurthubConfigMapName {
 		return
 	}
 
 	newCfg, ok := newObj.(*corev1.ConfigMap)
-	if !ok {
+	if !ok || newCfg.Name != util.YurthubConfigMapName {
 		return
 	}
 
@@ -169,8 +169,8 @@ func (m *Manager) updateConfigmap(oldObj, newObj interface{}) {
 }
 
 func (m *Manager) deleteConfigmap(obj interface{}) {
-	_, ok := obj.(*corev1.ConfigMap)
-	if !ok {
+	cfg, ok := obj.(*corev1.ConfigMap)
+	if !ok || cfg.Name != util.YurthubConfigMapName {
 		return
 	}
 	m.updateCacheAgents("", "delete")

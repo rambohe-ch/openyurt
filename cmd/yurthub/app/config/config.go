@@ -116,7 +116,9 @@ func Complete(options *options.YurtHubOptions, stopCh <-chan struct{}) (*YurtHub
 
 		// list/watch endpoints from host cluster in order to resolve tenant cluster address.
 		newEndpointsInformer := func(client kubernetes.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-			return coreinformers.NewFilteredEndpointsInformer(client, "kube-public", resyncPeriod, nil, nil)
+			informer := coreinformers.NewFilteredEndpointsInformer(client, "kube-public", resyncPeriod, nil, nil)
+			informer.SetTransform(pkgutil.TransformStripManagedFields())
+			return informer
 		}
 		sharedFactory.InformerFor(&corev1.Endpoints{}, newEndpointsInformer)
 		cfg.SharedFactory = sharedFactory
@@ -145,7 +147,7 @@ func Complete(options *options.YurtHubOptions, stopCh <-chan struct{}) (*YurtHub
 		if err != nil {
 			return nil, err
 		}
-		registerInformers(sharedFactory, options.YurtHubNamespace, options.NodeName, (cfg.WorkingMode == util.WorkingModeCloud), tenantNamespce)
+		registerInformers(sharedFactory, options.YurtHubNamespace, options.NodePoolName, options.NodeName, (cfg.WorkingMode == util.WorkingModeCloud), tenantNamespce)
 
 		certMgr, err := certificatemgr.NewYurtHubCertManager(options, us)
 		if err != nil {
@@ -191,7 +193,7 @@ func Complete(options *options.YurtHubOptions, stopCh <-chan struct{}) (*YurtHub
 
 		cfg.ConfigManager = configManager
 		cfg.FilterFinder = filterFinder
-		cfg.RequestMultiplexerManager = newRequestMultiplexerManager(options, restMapperManager)
+		cfg.RequestMultiplexerManager = newRequestMultiplexerManager(options, restMapperManager, sharedFactory)
 
 		if options.EnableDummyIf {
 			klog.V(2).Infof("create dummy network interface %s(%s)", options.HubAgentDummyIfName, options.HubAgentDummyIfIP)
@@ -284,15 +286,17 @@ func createClientAndSharedInformerFactories(serverAddr, nodePoolName string) (ku
 func registerInformers(
 	informerFactory informers.SharedInformerFactory,
 	namespace string,
+	poolName string,
 	nodeName string,
 	enablePodInformer bool,
 	tenantNs string) {
 
-	// configmap informer is used for list/watching yurt-hub-cfg configmap which includes configurations about cache agents and filters.
-	// and is used by approver in filter and cache manager on cloud and edge working mode.
+	// configmap informer is used for list/watching yurt-hub-cfg configmap and leader-hub-{poolName} configmap.
+	// yurt-hub-cfg configmap includes configurations about cache agents and filters which are needed by approver in filter and cache manager on cloud and edge working mode.
+	// leader-hub-{nodePoolName} configmap includes leader election configurations which are used by multiplexer manager.
 	newConfigmapInformer := func(client kubernetes.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 		tweakListOptions := func(options *metav1.ListOptions) {
-			options.FieldSelector = fields.Set{"metadata.name": util.YurthubConfigMapName}.String()
+			options.LabelSelector = fmt.Sprintf("openyurt.io/configmap-name in (%s, %s)", util.YurthubConfigMapName, "leader-hub"+poolName)
 		}
 		informer := coreinformers.NewFilteredConfigMapInformer(client, namespace, resyncPeriod, nil, tweakListOptions)
 		informer.SetTransform(pkgutil.TransformStripManagedFields())
@@ -388,14 +392,14 @@ func prepareServerServing(options *options.YurtHubOptions, certMgr certificate.Y
 	return nil
 }
 
-func newRequestMultiplexerManager(options *options.YurtHubOptions, restMapperManager *meta.RESTMapperManager) *multiplexer.MultiplexerManager {
+func newRequestMultiplexerManager(options *options.YurtHubOptions, restMapperManager *meta.RESTMapperManager, sharedFactory informers.SharedInformerFactory) *multiplexer.MultiplexerManager {
 	config := &rest.Config{
 		Host:      fmt.Sprintf("http://%s:%d", options.YurtHubProxyHost, options.YurtHubProxyPort),
 		UserAgent: util.MultiplexerProxyClientUserAgentPrefix + options.NodeName,
 	}
 	storageProvider := storage.NewStorageProvider(config)
 
-	return multiplexer.NewRequestMultiplexerManager(storageProvider, restMapperManager, options.PoolScopeResources)
+	return multiplexer.NewRequestMultiplexerManager(storageProvider, restMapperManager, options.PoolScopeResources, sharedFactory, options.NodePoolName, options.NodeName)
 }
 
 func ReadinessCheck(cfg *YurtHubConfiguration) error {

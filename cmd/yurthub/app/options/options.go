@@ -167,6 +167,10 @@ func (options *YurtHubOptions) Validate() error {
 		if len(options.CACertHashes) == 0 && !options.UnsafeSkipCAVerification {
 			return fmt.Errorf("set --discovery-token-unsafe-skip-ca-verification flag as true or pass CACertHashes to continue")
 		}
+
+		if len(options.NodePoolName) == 0 {
+			return fmt.Errorf("node-pool-name is emtpy")
+		}
 	}
 
 	return nil
